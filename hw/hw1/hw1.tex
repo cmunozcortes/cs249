@@ -1,0 +1,468 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage[T1]{fontenc}
+
+% macro to select a scaled-down version of Bera Mono (for instance)
+\makeatletter
+\newcommand\BeraMonottfamily{%
+  \def\fvm@Scale{0.85}% scales the font down
+  \fontfamily{fvm}\selectfont% selects the Bera Mono font
+}
+\makeatother
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\BeraMonottfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\title{CS249 Fall 2020\\
+       Problem Set 1: Statistical Inference}
+\author{Christopher Munoz Cortes}
+\date{October 26, 2020}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+
+\begin{document}
+
+\maketitle
+
+\section{Maximum Likelihood Estimation}
+\begin{enumerate}[label={(\alph*)}]
+    \item Assume we have $n$ positive data points $Y_1,...,Y_n \sim$
+    Exponential$(\theta)$. Compute the maximum likelihood estimator for $\theta$.
+    
+    We know that the probability density function of an exponential 
+    distribution is given by
+    \begin{align*}
+        f(y;\theta) =
+        \begin{cases}
+            \theta e^{-\theta y} & y \geq 0 \\
+            0 & \text{o.w.}
+        \end{cases}
+    \end{align*}
+    The likelihood function of this distribution is
+    \[
+        \mathcal{L}(\theta) = \prod_{i=1}^{n} \theta e^{-\theta y_i} = 
+        \left(\theta e^{-\theta y_1}\right) \left(\theta e^{-\theta  
+        y_2}\right) ...\left(\theta e^{-\theta y_n}\right) =
+        \theta^n e^{-\theta\sum_{i=1}^{n}y_i}
+    \]
+    The MLE of this exponential distribution can be calculated taking the 
+    derivative of the log-likelihood function (which is easier to compute 
+    than the likelihood function) and setting it equal to zero.
+    \begin{align*}
+        \dfrac{d}{d\theta}\left[ln{\mathcal{L}(\theta)}\right]  &= 0 \\
+        \dfrac{d}{d\theta} \left[\ln{\left(\theta^n e^{-\theta \sum_{i=1}^{n}
+        y_i}\right)}\right]  &= 0 \\
+        \dfrac{d}{d\theta}\left[n\ln{\theta} - \theta \sum_{i=1}^{n} 
+        y_i\right] &= 0 \\
+        \dfrac{n}{\theta} - \sum_{i=1}^{n}y_i &= 0
+    \end{align*}
+    Solving for the $\theta$:
+    \begin{equation*}
+        \boxed{\theta = \dfrac{n}{\sum_{i=1}^{n} y_i}}
+    \end{equation*}
+    \item Assume we have $n$ positive data points $Y_1,...,Y_n \sim$ 
+    Uniform$(0, \theta)$, meaning the data is coming from a uniform distribution in the 
+    interval $[0,\theta]$. Compute the maximum likelihood estimator for $\theta$.
+    
+    The pdf of $Y \sim$ Uniform$(0,\theta)$ is
+    \begin{equation}
+        f(y;\theta) = 
+        \begin{cases}
+            \frac{1}{\theta} & 0 \leq y \leq \theta \\
+            0 & \text{o.w.}
+        \end{cases}
+    \end{equation}
+    Now consider a fixed value of $\theta$. If $Y_i > \theta$ for some $i$, then 
+    $f(Y_i;\theta)$ = 0 and therefore $\mathcal{L}(\theta)$ = 0. This means that if any 
+    $Y_i > 0$, $\mathcal{L}(\theta) = 0$. This can be written as $\mathcal{L}(\theta) = 0$, if $\theta < Y_n$, where $Y_{(n)} = \max\{Y_1,\ldots,Y_n\}$.
+    On the other hand, if $Y_{(n)} \leq \theta$, $f(y;\theta) = 1/\theta$ and consequently $\mathcal{L}(\theta) = 1/\theta^n$
+    Hence,
+    \begin{equation}
+            \mathcal{L}(\theta) =
+        \begin{cases}
+           \frac{1}{\theta^n} & \theta \geq Y_{(n)} \\
+           0 & \theta < Y_{(n)}
+        \end{cases}
+    \end{equation}
+    Finally, since $\mathcal{L}(\theta)$ is strictly decreasing in $[Y_{(n)}, \infty)$, the maximum value occurs at $Y_{(n)}$ and $\hat{\theta} = Y_{(n)}$.
+    
+    \item Estimate bias, variance, and RMSE for the estimator in (b) when $\theta = 10$ 
+    and $n=100$ by doing simulations in Python.
+    \begin{lstlisting}[language=Python, caption=Code for part (c)]
+import numpy as np
+np.random.seed(0)
+
+# Estimate bias, variance, and RMSE for a estimator from part (b)
+# for theta=10, n=100
+low = 0
+theta = 10
+n=100
+theta_hats = []
+
+def question_one(low, theta, n):
+  theta_hats = []
+  for i in range(1000):
+    y = np.random.uniform(low=0, high=theta, size=n)
+    theta_hat = np.max(y)
+    theta_hats.append(theta_hat)
+  theta_hats = np.array(theta_hats)
+
+  # Calculate bias, variance, and RMSE of the estimator theta_hat
+  # To calculate the bias, take the mean of the theta_hats as the expectation
+  bias = np.mean(theta_hats) - theta
+  variance = np.var(theta_hats)
+  mse = bias**2 + variance
+  rmse = np.sqrt(mse)
+  return bias, variance, rmse
+
+bias, variance, rmse = question_one(low, theta, n)
+\end{lstlisting}
+
+Output:
+    \begin{itemize}
+        \item bias$(\hat{\theta})$: -0.100
+        \item Var$(\hat{\theta})$: 0.00829
+        \item RMSE$(\hat{\theta})$: 0.135
+    \end{itemize}
+    
+    \item What are the estimated values in (c) if $n$ increases to 500? Describe your observations.
+    If $n$ increases from 100 to 500, $\hat{\theta}$ starts to converge towards $\theta$ and the ``spread'' of the distribution begins to shrink, as evidenced by the decreasing variance and RSME. In other words, $\hat{\theta}$ becomes a better estimator of $\theta$.
+    \begin{itemize}
+        \item bias$(\hat{\theta})$: -0.0193
+        \item Var$(\hat{\theta})$: 0.000360
+        \item RMSE$(\hat{\theta})$: 0.0271
+    \end{itemize}
+\end{enumerate}
+\pagebreak
+
+\section{Bootstrap}
+\begin{enumerate}[label={(\alph*)}]
+    \item Assume we have a sample of 20 IDD data points with the following values:
+    
+    3.0 1.9 6.4 5.9 4.2 6.2 1.4 2.9 2.3 4.8 7.8 4.5
+    0.7 4.4 4.4 6.5 7.6 6.1 2.7 1.6
+    
+    Assume we define $T$ as the median among 20 data points. Use bootstrap
+    to estimate the standard error and the confidence interval for $T$.
+    \begin{itemize}
+        \item Bootstrap standard error: 0.733
+        \item Bootstrap 95\% confidence interval: (2.964, 5.836)
+    \end{itemize}
+    \begin{lstlisting}[language=Python, caption=Standard Error and Confidence Interval for $T$]
+# Create array with data
+data = np.array([3.0, 1.9, 6.4, 5.9, 4.2, 6.2, 1.4, 2.9, 2.3, 4.8, 7.8, 4.5,
+                 0.7, 4.4, 4.4, 6.5, 7.6, 6.1, 2.7, 1.6])
+                 
+# Create the bootstrap datasets and calculate the median for each
+t_boot_list = [np.median(np.random.choice(data, len(data), replace=True))
+               for _ in range(1000)]
+
+# Calculate the standard error and the confidence interval
+t_boot_se = np.std(t_boot_list)
+ci_lower = np.median(data) - 1.96*t_boot_se
+ci_upper = np.median(data) + 1.96*t_boot_se                 
+    \end{lstlisting}
+    
+    \item Use \lstinline{y = np.random.normal(0, 5, 100)} to generate 100 data points from
+    the normal distribution $N(0,5)$. Consider the generated data points as your observed data.
+        \begin{itemize}
+            \item Apply the bootstrap method to estimate the standard error for
+            $T_1$ and $T_2$, where $T_1$ is the sample median and $T_2$ is the maximum
+            value in the sample.
+            \begin{itemize}
+                \item $T_1$ Bootstrap standard error: 0.504
+                \item $T_2$ Bootstrap standard error: 1.680
+            \end{itemize}
+            
+            \item Next, compute the actual standard error for $T_1$ and $T_2$ by simulating
+            many times from the data source (i.e., $N(0, 5)$).
+            \begin{itemize}
+                \item Actual standard error by sim from source for $T_1$: 0.623
+                \item Actual standard error by sim from source for $T_2$: 2.196
+            \end{itemize}
+        \end{itemize}
+\begin{lstlisting}[language=Python, caption=Bootstrap and Actual Standard Error]
+# Generate new data points. This is the observed data.
+y = np.random.normal(0,5,100)
+
+# Apply the bootstrap method to estimate
+# T1: sample median
+# T2: max value
+t1_boot_list = [np.median(np.random.choice(y, len(y), replace=True))
+               for _ in range(1000)]
+t1_boot_se = np.std(t1_boot_list)
+
+t2_boot_list = [np.max(np.random.choice(y, len(y), replace=True))
+                for _ in range(1000)]
+t2_boot_se = np.std(t2_boot_list)
+
+# Compute the actual standard error for T1 and T2 by simulating many times
+# from the data source
+sim_t1_list = [np.median(np.random.normal(0,5,100)) for _ in range(1000)]
+sim_t1_se = np.std(sim_t1_list)
+
+sim_t2_list = [np.max(np.random.normal(0,5,100)) for _ in range(1000)]
+sim_t2_se = np.std(sim_t2_list)
+\end{lstlisting}
+
+\end{enumerate}
+\pagebreak
+
+\section{Parametric Bootstrap}
+\begin{enumerate}[label={(\alph*)}]
+    \item First, we need a parametric distribution model for the data. Let’s
+    assume the data points in part (a) are generated from a normal distribution
+    with the mean of $\theta$ and the standard deviation of 2. Using
+    the observed data, compute $\hat{\theta}$, the estimated value of the $\theta$ in this
+    distribution model.
+    
+    We can compute $\hat{\theta}$ using MLE:
+    \begin{align*}
+        \mathcal{L}(\theta,\sigma) &= \prod_i
+        \dfrac{1}{\sqrt{2\pi\sigma^2}}\exp{\left\{-\dfrac{1}{2\sigma^2}
+        \left(X_i - \theta \right)^2\right\}} \\
+        \mathcal{L}(\theta,\sigma) &= 
+        \dfrac{1}{\sqrt{(2\pi\sigma^2)^n}}\exp{\left\{-\dfrac{1}{2\sigma^2}
+        \sum_i{\left(X_i - \theta \right)^2} \right\}}
+    \end{align*}
+    Taking the log on both sides,
+    \begin{align*}
+        \ln\mathcal{L}(\theta,\sigma) &= -\dfrac{n}{2}\ln 2\pi\sigma^2 - 
+        \dfrac{1}{2\sigma^2} \sum_i{(X_i - \theta)^2}
+    \end{align*}
+    Taking the partial derivative with respect to $\theta$,
+    \begin{equation*}
+        \dfrac{\partial}{\partial \theta} \ln \mathcal{L}
+        (\theta, \sigma) =
+        \dfrac{1}{\sigma^2} \sum_i (X_i - \theta) =
+        \dfrac{1}{\sigma^2} n(\bar{x} - \theta) \\
+    \end{equation*}
+    Setting equal to 0 and solving for $\theta$,
+    \begin{equation*}
+        \boxed{\hat{\theta} = \bar{x}}
+    \end{equation*} 
+    Consequently, $\boxed{\hat{\theta} = \bar{x} = 4.265}$.
+    
+    \item Generate bootstrap samples (20 data points each) from the distribution
+    with the estimated parameter (i.e., $N(\hat{\theta},2)$).
+    
+    \texttt{See listing below for code}
+    
+    \item In each bootstrap sample, estimate the value of $\theta$ again based on the
+    simulated data. 
+    
+    \texttt{See listing below for code}
+    
+    \item Compute the standard deviation for the estimated parameter among
+    the bootstrap samples. This standard deviation is the estimated standard
+    error for $\theta$. 
+    
+    The estimated standard error for $\theta$ was 0.453.
+    
+\begin{lstlisting}[language=Python, caption=Parametric Bootstrap code]
+# Compute theta_hat for this distribution model (using MLE)
+theta_hat = np.mean(data)
+print(f"Estimator for the mean of theta (theta_hat): {theta_hat}")
+
+# Generate bootstrap samples, i.e. simulate the data from source
+sim_data = [np.random.normal(theta_hat,2,100) for _ in range(1000)]
+
+# Estimate the value of theta_hat in each bootstrap sample
+theta_hats = [np.mean(sim_sample) for sim_sample in sim_data]
+
+# Compute the standard error fot theta_hat
+theta_hat_se = np.std(theta_hats)
+print(f"Standard error for theta_hat: {theta_hat_se}")
+\end{lstlisting}
+\end{enumerate}
+\pagebreak
+
+\section{Bayesian Inference}
+\begin{enumerate}[label={(\alph*)}]
+    \item Assume we have observed IID data points $X_1,\ldots,X_{10}$ from the distribution
+    $N(\theta,1)$, where the sample average, $\bar{X}$, is 1.68. If our prior
+    belief about $\theta$ can be described by $N(0,3)$, compute the posterior distribution
+    of $\theta$ after observing this data.
+%    \begin{table}[h]
+%        \centering
+%        \begin{tabular}{@{}cccc@{}}
+%        \toprule
+%        Parameter & \texttt{mean} & \texttt{se\_mean} & \texttt{sd} \\
+%        \midrule
+%        $\theta$ & 1.33 & 0.01 & 0.39 \\
+%        $\sigma$ & 1.24 & 0.01 & 0.35 \\ \bottomrule
+%        \end{tabular}
+%    \end{table}
+    We know that the posterior distribution is given by
+    \begin{align*}
+        f(\theta|X_1,\ldots,X_{10}) \propto \mathcal{L}(\theta)f(\theta)
+    \end{align*}
+    \begin{align*}
+        \mathcal{L}(\theta)f(\theta) &= \prod_{i=1}^{n} \dfrac{1}{\sqrt{2\pi\sigma^2}}
+        \exp{\left\{-\dfrac{(X_i - \theta)^2}{2\sigma^2}\right\}}
+        \dfrac{1}{\sqrt{2\pi\sigma_0^2}} \exp{\left\{ - \dfrac{(\theta -
+        \theta_0)^2}{2\sigma_0^2}\right\}} \\
+        &= \dfrac{1}{\sqrt{(2\pi\sigma^2)^n}}\exp{\left\{-\dfrac{1}{2\sigma^2}
+        \sum_i{\left(X_i - \theta \right)^2} \right\}}
+        \dfrac{1}{\sqrt{2\pi\sigma_0^2}} \exp{\left\{ - \dfrac{(\theta -
+        \theta_0)^2}{2\sigma_0^2}\right\}} \\
+        &= \dfrac{1}{(2\pi)^\frac{n+1}{2} \sqrt{\sigma^{2n} \sigma_0^2}}
+        \exp{\left\{ \dfrac{\theta^2 + 2\theta \theta_0 - \theta_0^2}{2\sigma_0^2}
+        -\sum_{i=1}^n \dfrac{X_i^2 2\theta X_i + \theta^2}{2\sigma^2}\right\}} \\
+        &\propto \exp{\left\{ \dfrac{-\theta^2\sigma^2 + 2\theta\theta_0\sigma^2
+        - \theta_0^2\sigma^2 - (\sum_i X_i^2\sigma_0^2 - -2\sum_i X_i\theta\sigma_0^2 + 
+        n\theta^2\sigma_0^2)}{2\sigma_0^2\sigma^2}\right\}} \\ 
+        &\propto \exp{\left\{ \dfrac{-\theta^2(\sigma^2 + n\sigma_0^2) +2\theta(\theta_0 \sigma^2
+        + \sum_i X_i\sigma_0^2) - (\theta_0^2\sigma^2 + \sum_i X_i^2 \sigma_0^2)} {
+        2\sigma_0^2 \sigma^2} \right\}} \\
+        \begin{split}
+            &\propto \exp{\left\{ \dfrac{-\theta^2 + 2\theta \left(\dfrac{\theta_0\sigma^2 +
+            \sum_i X_i\sigma_0^2}{\sigma^2 + n\sigma_0^2}\right) - 
+            \left(\dfrac{\theta_0^2\sigma^2 + \sum_i X_i^2 \sigma_0^2}{\sigma^2 + 
+            n\sigma_0^2}\right)^2}{\dfrac{2\sigma_0^2\sigma^2}{\sigma^2 + 
+            n\sigma_0^2}}\right\}} \\
+            &\qquad\qquad \times
+            \exp{\left\{-\dfrac{\theta_0^2\sigma^2 + \sum_i X_i^2 \sigma_0^2}
+            {2\sigma_0^2\sigma^ r}\right\}}
+        \end{split}\\
+        &\propto \exp{\left\{-\dfrac{\left( \theta - 
+        \dfrac{\theta_0^2\sigma^2 + \sum_i X_i^2 \sigma_0^2}{\sigma^2 
+        + n\sigma_0^2}\right)^2}{2\dfrac{\sigma_0^2 \sigma^2}{\sigma^2 + 
+        n\sigma_0^2}}\right\}}
+    \end{align*}
+    Here we can define:
+    \[
+        \sigma_1^2 = \dfrac{\sigma_o^2 \sigma^2}{\sigma^2 + n\sigma_0^2} =
+        \dfrac{1}{\frac{\sigma^2 + n\sigma_0^2}{\sigma_0^2\sigma^2}} =
+        \dfrac{1}{\frac{1}{\sigma_0^2} + \frac{1}{\frac{\sigma^2}{n}}} =
+        \left( \dfrac{1}{\sigma_0^2} + \dfrac{1}{\frac{\sigma^2}{n}} \right)^{-1}
+    \]
+    and
+    \[
+        \theta_1 = \dfrac{\theta_0\sigma^2 + \sum_i X_i \sigma_0^2}{\sigma^2 + n\sigma_0^2} =
+        \dfrac{\theta_0\sigma_0^{-2} + \sum_i X_i \sigma^{-2}}{\sigma_0^{-2} + n\sigma^{-2}} =
+        \sigma_1^2 \left(\theta_0 \sigma_0^{-2} + \sum_i X_i \sigma^{-2}\right) =
+        \sigma_1^2 \left(\dfrac{\theta_0}{\sigma_0^2} + \dfrac{\bar{X}}{\frac{\sigma^2}{n}}\right)
+    \]
+    which shows that the resulting expression for the posterior distribution corresponds to a 
+    normal distribution with mean $\theta_1$ and standard deviation $\sigma_1$, i.e. 
+    $N(\theta_1,\sigma_1)$.
+    
+    Plugging in our values, we have:
+    \[
+        \sigma_1^2 = \dfrac{\sigma_0^2\sigma^2}{\sigma^2 + n\sigma_0^2} = 
+        \dfrac{(3)^2(1)^2}{(1)^2 + 10(3)^2} = 0.0989 
+        \rightarrow \boxed{\sigma_1 = 0.314}
+    \]
+    and
+    \[
+        \theta_1 = \sigma_1^2 \left(\dfrac{\theta_0}{\sigma_0^2} + 
+        \dfrac{\bar{X}}{\frac{\sigma^2}{n}}\right) =
+        0.0989 \left(\dfrac{0}{3^2} + \dfrac{1.68}{1/10}\right) 
+        \rightarrow \boxed{\theta_1 = 1.66}
+    \]
+    \item Assume we have gathered more evidence about $\theta$ in part (a) by 
+    experimenting with another signal related to the same source and gathering new data 
+    points $Z_1, \ldots, Z_{20} \overset{\text{\emph{iid}}}{\sim} N(\theta,4)$. If 
+    $\bar{Z} = 0.8$, 
+    compute the new posterior distribution of $\theta$ after seeing both 
+    samples. Assume samples in part (a) and (b) are independent from each 
+    other.
+    
+    Considering the prior distribution as $N(\theta_1, \sigma_1) = N(1.66,0.314)$, the 
+    posterior distribution given the new data $Z_1, \ldots, Z_{20} \sim N(\theta,4)$ is:
+    \[
+        \sigma_2^2 = \dfrac{\sigma_1^2\sigma^2}{\sigma^2 + n\sigma_1^2} = 
+        \dfrac{(0.0989)(4)^2}{(4)^2 + 20(0.0989)} = 0.088 
+        \rightarrow \boxed{\sigma_2 = 0.297}
+    \]
+    and
+    \[
+        \theta_2 = \sigma_2^2 \left(\dfrac{\theta_1}{\sigma_1^2} + \dfrac{\bar{X}}{\frac{\sigma^2}{n}}\right) =
+        0.088 \left(\dfrac{1.66}{0.0989} + \dfrac{0.8}{4^2/20}\right) 
+        \rightarrow \boxed{\theta_2= 1.565} 
+    \]
+    \item How does your inference result change if your sample in part (b) had
+    more data points?
+    
+    As the number of data points $n$ increases, the posterior distribution becomes more influenced by the likelihood function of the observed data. Eventually, for very large values of $n$, the prior distribution vanishes and the Bayesian inference method yield a similar result to a frequentist approach.
+    \item How does your inference result change if you had more certainty about
+    your prior belief (i.e. the prior distribution had lower variance)?
+    
+    The posterior distribution would be closer to the prior distribution, provided that
+    the observed data didn't indicate a significantly different distribution. 
+    
+%\begin{lstlisting}[language=Python, caption=Bayesian Inference Code]
+%import pystan
+%
+%n = 10
+%x_bar = 1.68
+%y = np.random.normal(x_bar, 1, n)
+%
+%model_code = """
+%data {
+%  int<lower=0> n;
+%  real y[n];
+%}
+%parameters {
+%  real<lower=0,upper=100> theta;
+%  real<lower=0,upper=10> sigma;
+%}
+%model {
+%  y ~ normal(theta,sigma);
+%}
+%"""
+%norm_dat = {
+%    'n': 10,
+%    'y': y
+%}
+%
+%# Fit the model with the original data
+%model = pystan.StanModel(model_code=model_code)
+%fit = model.sampling(data=norm_dat, iter=1000, chains=4, n_jobs=2)
+%print(fit)
+%
+%# Fit the model with the new data
+%new_dat = {
+%    'n': 20,
+%    'y': np.random.normal(0.8, 4, 20),
+%}
+%
+%fit2 = model.sampling(data=new_dat)
+%print(fit2)
+%\end{lstlisting}
+    
+\end{enumerate}
+
+%\bibliographystyle{plain}
+%\bibliography{references}
+\end{document}
