@@ -1,2 +1,11 @@
 # Jupyter Notebook
 **/.ipynb_checkpoints
+
+# Latex intermediate files
+**/*.aux
+**/*.synctex.gz
+**/*.tex.bak
+**/*.log
+
+# PNG files
+**/*.png
