@@ -104,8 +104,43 @@
     Search online and find suitable ways to impute missing values in a
     dataset. Use one of these methods to treat such variables in the data.
     
-    The proper approach to handling missing values in a dataset depends on 
-    \textit{missingness mechanism}, i.e. why the data are missing. 
+    Some imputation methods are:
+    \begin{itemize}
+      \item \emph{Mean, median, mode imputation}. Replace each missing value with
+      the mean, or the median, or the mode (most frequent value) of the observed 
+      values for that feature.
+      \item \emph{Regression imputation}. If we know there's a correlation between
+      the missing value and other features, it is possible to get better estimates
+      by running a linear regression for the missing feature values on other
+      features.
+      \item \emph{K-nearest Neighbor Imputation}. Neighbor-based imputation replaces
+      the missing values with the most frequent value among the $k$-nearest neighbor
+      for categorical data, and mean or mode for continuous variables.
+      \item \emph{Multiple Imputation}. The single imputation methods above are limited
+      in that they do not reflect the same variability from the sample data and the
+      missing values. Multiple imputation methods create several imputed values for
+      each missing value. Since each value is predicted from a slightly different model,
+      it reflects sampling variability. One such method is MICE (Multivariate Imputation
+      by Chained Equation).
+    \end{itemize}
+    
+    For instance, if we were to take all the numerical features in our data and fill in
+    missing values, we could use \texttt{scikit-learn}'s \texttt{IterativeImputer}.
+    This implementation models each feature with missing values as a function of other
+    features in a round-robin fashion.
+
+\begin{lstlisting}[language=Python, caption=Imputing missing values using
+\texttt{IterativeImputer}]
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+
+# Trainset is a dataframe with the data from `train.csv`
+X = trainset.select_dtypes([np.number])
+feat_names = X.columns
+imp = IterativeImputer(max_iter=10, random_state=0, n_nearest_features=4)
+X = pd.DataFrame(data=imp.fit_transform(X), columns=feat_names)
+\end{lstlisting}
+    
     \item Name two categorical features in the data, and choose ten features from
     the dataset that you think will be most predictive of the outcome
     \begin{itemize}
